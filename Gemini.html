@@ -1,0 +1,1147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interstellar Big Bang & Milky Way Sequence</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", monospace, sans-serif;
+    color: #e0e8f5;
+  }
+  #canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  #canvas-container canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* HUD Overlays */
+  .hud-overlay {
+    position: absolute;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .hud-header {
+    top: 24px;
+    left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-shadow: 0 0 15px rgba(255, 160, 40, 0.6);
+  }
+  .hud-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hud-title .badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    background: rgba(255, 120, 0, 0.25);
+    border: 1px solid rgba(255, 150, 50, 0.5);
+    border-radius: 4px;
+    color: #ffaa55;
+    letter-spacing: 0.15em;
+  }
+  .hud-subtitle {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: rgba(200, 220, 255, 0.6);
+    text-transform: uppercase;
+  }
+
+  /* Audio Activation Splash */
+  #audio-gate {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(10, 5, 20, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+    backdrop-filter: blur(8px);
+  }
+  #audio-gate.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .gate-ring {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 170, 70, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    animation: rotateRing 20s linear infinite;
+    box-shadow: 0 0 35px rgba(255, 120, 20, 0.25), inset 0 0 25px rgba(255, 100, 0, 0.2);
+    position: relative;
+  }
+  .gate-ring::after {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 220, 160, 0.7);
+    animation: pulseCore 2.4s ease-in-out infinite;
+  }
+  @keyframes rotateRing {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulseCore {
+    0%, 100% { transform: scale(0.92); opacity: 0.5; }
+    50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 10px #ff9922); }
+  }
+  .gate-icon {
+    font-size: 40px;
+    filter: drop-shadow(0 0 12px #ff8800);
+  }
+  .gate-text {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(255, 150, 50, 0.8);
+  }
+  .gate-desc {
+    font-size: 12px;
+    color: rgba(210, 225, 255, 0.65);
+    letter-spacing: 0.15em;
+  }
+
+  /* Interactive Control Bar */
+  .hud-controls {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    background: rgba(8, 12, 22, 0.65);
+    border: 1px solid rgba(255, 170, 80, 0.2);
+    padding: 10px 18px;
+    border-radius: 36px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 120, 20, 0.1);
+    z-index: 20;
+  }
+  .btn-hud {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 160, 60, 0.25);
+    color: #e5efff;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .btn-hud:hover {
+    background: rgba(255, 140, 30, 0.2);
+    border-color: rgba(255, 180, 70, 0.6);
+    color: #fff;
+    box-shadow: 0 0 14px rgba(255, 120, 0, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-hud.active {
+    background: linear-gradient(135deg, rgba(255, 120, 20, 0.4), rgba(200, 30, 10, 0.4));
+    border-color: #ff9933;
+    color: #fff;
+    box-shadow: 0 0 18px rgba(255, 120, 0, 0.5);
+  }
+  
+  #btn-big-bang {
+    background: linear-gradient(135deg, rgba(200, 10, 10, 0.6), rgba(120, 0, 20, 0.6));
+    border-color: #ff3333;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    animation: pulseDanger 2s infinite;
+  }
+  #btn-big-bang:hover {
+    background: linear-gradient(135deg, rgba(255, 30, 30, 0.8), rgba(150, 0, 40, 0.8));
+    box-shadow: 0 0 30px rgba(255, 50, 50, 0.8);
+  }
+
+  @keyframes pulseDanger {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
+  }
+
+  /* Telemetry Panel */
+  .hud-stats {
+    top: 24px;
+    right: 28px;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: rgba(180, 210, 255, 0.7);
+  }
+  .stat-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .stat-val {
+    color: #ffb055;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .critical-val {
+    color: #ff3333 !important;
+    text-shadow: 0 0 10px #ff0000;
+    animation: flashCritical 0.2s infinite;
+  }
+  
+  @keyframes flashCritical {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+  }
+
+  /* Audio Waveform Canvas */
+  #wave-canvas {
+    width: 90px;
+    height: 24px;
+    display: block;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  /* Sequence Flash Overlay */
+  #flash-overlay {
+      position: absolute;
+      inset: 0;
+      background: white; /* Switches dynamically to black for absolute darkness */
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.05s;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 768px) {
+    .hud-header { top: 16px; left: 16px; }
+    .hud-title { font-size: 15px; }
+    .hud-stats { display: none; }
+    .hud-controls { bottom: 16px; width: 96%; justify-content: space-around; padding: 8px 6px; flex-wrap: wrap;}
+    .btn-hud { padding: 6px 8px; font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="flash-overlay"></div>
+
+<div id="audio-gate">
+  <div class="gate-ring">
+    <div class="gate-icon">✦</div>
+  </div>
+  <div class="gate-text">ENTER UNIVERSE</div>
+  <div class="gate-desc">TAP TO ACTIVATE 3D GRAVITATIONAL AUDIO & VIBRATION</div>
+</div>
+
+<div class="hud-overlay hud-header">
+  <div class="hud-title" id="hud-title-text">
+    GARGANTUA <span class="badge" id="hud-badge">KERR METRIC</span>
+  </div>
+  <div class="hud-subtitle" id="hud-subtitle-text">3D Relativistic Space Bending • Sonic Resonator</div>
+</div>
+
+<div class="hud-overlay hud-stats">
+  <div class="stat-row">SPACETIME WARP: <span class="stat-val" id="val-warp">1.00x</span></div>
+  <div class="stat-row">ACOUSTIC FREQ: <span class="stat-val" id="val-freq">43.2 Hz</span></div>
+  <div class="stat-row">SYSTEM STATUS: <span class="stat-val" id="val-status">STABLE</span></div>
+  <div class="stat-row" style="margin-top: 4px;">
+    <canvas id="wave-canvas" width="90" height="24"></canvas>
+  </div>
+</div>
+
+<div class="hud-controls">
+  <button id="btn-sound" class="btn-hud active" title="Toggle Cosmic Drone">
+    <span id="sound-icon">🔊</span> SOUND
+  </button>
+  <button id="btn-palette" class="btn-hud" title="Cycle Vibrating Colors">
+    🎨 PALETTE
+  </button>
+  <button id="btn-big-bang" class="btn-hud" title="Trigger Big Bang Sequence">
+    💥 INITIATE BIG BANG
+  </button>
+</div>
+
+<!-- Load Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+(function() {
+  // --- Audio Synthesis Engine ---
+  let audioCtx = null;
+  let isMuted = false;
+  let masterGain = null;
+  let analyser = null;
+  let subOsc = null;
+  let subGain = null;
+  let droneOsc1 = null;
+  let droneOsc2 = null;
+  let noiseNode = null;
+  let filterNode = null;
+  let waveData = null;
+  let audioVibrationLevel = 0.0;
+  let warpPulseIntensity = 0.0;
+
+  function initAudio() {
+    if (audioCtx) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass();
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.8;
+    waveData = new Uint8Array(analyser.frequencyBinCount);
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    // Deep Sub-Bass Rumble[span_0](start_span)[span_0](end_span)
+    subOsc = audioCtx.createOscillator();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(43.2, audioCtx.currentTime);
+    subGain = audioCtx.createGain();
+    subGain.gain.setValueAtTime(0.55, audioCtx.currentTime);
+    subOsc.connect(subGain);
+    subGain.connect(masterGain);
+    subOsc.start();
+
+    // Dual Detuned Saw Drones[span_1](start_span)[span_1](end_span)
+    droneOsc1 = audioCtx.createOscillator();
+    droneOsc1.type = 'sawtooth';
+    droneOsc1.frequency.setValueAtTime(86.4, audioCtx.currentTime); 
+    droneOsc2 = audioCtx.createOscillator();
+    droneOsc2.type = 'sawtooth';
+    droneOsc2.frequency.setValueAtTime(87.2, audioCtx.currentTime); 
+
+    filterNode = audioCtx.createBiquadFilter();
+    filterNode.type = 'lowpass';
+    filterNode.frequency.setValueAtTime(260, audioCtx.currentTime);
+    filterNode.Q.setValueAtTime(4.2, audioCtx.currentTime);
+
+    const droneGain = audioCtx.createGain();
+    droneGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+
+    droneOsc1.connect(filterNode);
+    droneOsc2.connect(filterNode);
+    filterNode.connect(droneGain);
+    droneGain.connect(masterGain);
+    droneOsc1.start();
+    droneOsc2.start();
+
+    // Cosmic Wind / Noise[span_2](start_span)[span_2](end_span)
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+    noiseNode = audioCtx.createBufferSource();
+    noiseNode.buffer = noiseBuffer;
+    noiseNode.loop = true;
+
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(420, audioCtx.currentTime);
+    noiseFilter.Q.setValueAtTime(2.0, audioCtx.currentTime);
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    noiseNode.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(masterGain);
+    noiseNode.start();
+  }
+
+  function makeDistortionCurve(amount) {
+    const k = typeof amount === 'number' ? amount : 50;
+    const n_samples = 44100;
+    const curve = new Float32Array(n_samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n_samples; ++i) {
+      let x = i * 2 / n_samples - 1;
+      curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
+  }
+
+  const PALETTES = [
+    { name: "INTERSTELLAR", id: 0 },
+    { name: "QUANTUM VIOLET", id: 1 },
+    { name: "SUPERNOVA CYAN", id: 2 },
+    { name: "SINGULARITY DUAL", id: 3 }
+  ];
+  let currentPaletteIdx = 0;
+
+  // --- Three.js Setup ---
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  container.appendChild(renderer.domElement);
+
+  // --- 3D Particle System for Matter Sucking In ---
+  const particleCount = 15000;
+  const particleGeo = new THREE.BufferGeometry();
+  const pPositions = new Float32Array(particleCount * 3);
+  const pColors = new Float32Array(particleCount * 3);
+
+  for(let i = 0; i < particleCount; i++) {
+      let r = 4.0 + Math.random() * 30.0;
+      let theta = Math.random() * Math.PI * 2;
+      let phi = (Math.random() - 0.5) * 1.5; 
+      
+      pPositions[i*3] = r * Math.cos(theta) * Math.cos(phi);
+      pPositions[i*3+1] = r * Math.sin(phi);
+      pPositions[i*3+2] = r * Math.sin(theta) * Math.cos(phi);
+
+      let brightness = Math.random();
+      pColors[i*3] = 1.0; 
+      pColors[i*3+1] = 0.4 + brightness * 0.4;
+      pColors[i*3+2] = brightness * 0.3;
+  }
+  
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+  particleGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+  const particleMat = new THREE.PointsMaterial({
+      size: 0.06,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      opacity: 0.0 // Hidden initially
+  });
+
+  const particlesMesh = new THREE.Points(particleGeo, particleMat);
+  scene.add(particlesMesh);
+
+  // --- Gravitational Lensing Shader ---[span_3](start_span)[span_3](end_span)
+  const fragmentShader = `
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform vec3 u_cam_pos;
+    uniform vec3 u_cam_target;
+    uniform float u_vibration;
+    uniform float u_pulse;
+    uniform int u_palette;
+    
+    uniform float u_mix_galaxy;
+    uniform float u_dark_factor;
+    uniform float u_flash;
+    uniform float u_warp_mult;
+    uniform float u_point_light;
+
+    #define PI 3.14159265359
+    #define STEPS 64
+    #define RS 1.0        // Schwarzschild radius[span_4](start_span)[span_4](end_span)
+    #define RIN 1.8       // Inner disk edge[span_5](start_span)[span_5](end_span)
+    #define ROUT 6.2      // Outer disk edge[span_6](start_span)[span_6](end_span)
+
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }[span_7](start_span)[span_7](end_span)
+
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                 mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+    }
+
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+      for (int i = 0; i < 4; ++i) {
+        v += a * noise(p);
+        p = rot * p * 2.0 + vec2(100.0);
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    // Starfield
+    vec3 backgroundStars(vec3 dir, float warpRipple) {
+      dir.xy += vec2(sin(dir.z * 18.0 + u_time * 3.0), cos(dir.z * 18.0 + u_time * 3.0)) * 0.015 * warpRipple * (u_warp_mult * 0.3);
+      dir = normalize(dir);
+
+      vec2 uv = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0)));
+      float n = hash(floor(uv * 180.0));
+      vec3 starCol = vec3(0.0);
+      if (n > 0.985) {
+        float b = pow((n - 0.985) / 0.015, 6.0) * (0.6 + 0.4 * sin(u_time * 6.0 + n * 40.0));
+        starCol = vec3(b * 1.5) * mix(vec3(0.7, 0.85, 1.0), vec3(1.0, 0.8, 0.6), hash(uv));
+      }
+
+      float nebula = fbm(uv * 2.5 + vec2(u_time * 0.01));
+      vec3 nebCol = mix(vec3(0.02, 0.04, 0.08), vec3(0.08, 0.03, 0.09), nebula) * smoothstep(0.3, 0.8, nebula);
+      nebCol = mix(nebCol, nebCol * 2.5 + vec3(0.05, 0.0, 0.1), u_mix_galaxy);
+      return starCol + nebCol;
+    }
+
+    // Accretion Palette[span_8](start_span)[span_8](end_span)
+    vec3 getDiskPalette(float temp, float doppler, float vibe) {
+      vec3 c = vec3(0.0);
+      if (u_palette == 0) {
+        vec3 colCore = vec3(1.0, 0.95, 0.85);
+        vec3 colMid  = vec3(1.0, 0.58, 0.12);
+        vec3 colRim  = vec3(0.75, 0.12, 0.02);
+        c = mix(colRim, colMid, smoothstep(0.0, 0.6, temp));
+        c = mix(c, colCore, smoothstep(0.6, 1.0, temp));
+        c += vec3(0.3 * sin(u_time * 4.0), 0.1 * cos(u_time * 5.0), 0.25 * sin(u_time * 3.0)) * vibe;
+      } else if (u_palette == 1) {
+        vec3 colCore = vec3(0.9, 0.95, 1.0);
+        vec3 colMid  = vec3(0.7, 0.1, 0.9);
+        vec3 colRim  = vec3(0.2, 0.02, 0.6);
+        c = mix(colRim, colMid, smoothstep(0.0, 0.6, temp));
+        c = mix(c, colCore, smoothstep(0.6, 1.0, temp));
+        c.rg += 0.25 * vibe * vec2(sin(u_time * 8.0), cos(u_time * 7.0));
+      } else if (u_palette == 2) {
+        vec3 colCore = vec3(0.95, 1.0, 1.0);
+        vec3 colMid  = vec3(0.05, 0.85, 0.95);
+        vec3 colRim  = vec3(0.01, 0.2, 0.6);
+        c = mix(colRim, colMid, smoothstep(0.0, 0.5, temp));
+        c = mix(c, colCore, smoothstep(0.5, 1.0, temp));
+        c.g += 0.2 * vibe;
+      } else {
+        float hue = fract(temp * 0.9 + u_time * 0.15 + vibe * 0.4);
+        c = 0.5 + 0.5 * cos(6.28318 * (vec3(1.0, 1.0, 1.0) * hue + vec3(0.0, 0.33, 0.67)));
+        c = mix(c, vec3(1.2), smoothstep(0.7, 1.0, temp));
+      }
+      c *= pow(doppler, 3.2);
+      return c;
+    }
+
+    void main() {
+      vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;[span_9](start_span)[span_9](end_span)
+
+      // Constant Space Bending / Wrapping logic during Milky Way Phase
+      float wrapWarp = u_mix_galaxy * 0.04 * sin(u_time * 2.5 - length(uv) * 12.0);
+      vec2 warpedUV = uv + normalize(uv) * wrapWarp * u_warp_mult;
+
+      vec3 ro = u_cam_pos;
+      vec3 forward = normalize(u_cam_target - ro);
+      vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+      vec3 up = cross(right, forward);
+
+      float shakeAmp = (u_vibration * 0.035 + u_pulse * 0.06) * clamp(u_warp_mult, 0.0, 5.0) * 0.2;
+      vec2 shake = vec2(sin(u_time * 37.0), cos(u_time * 43.0)) * shakeAmp;
+      vec3 rd = normalize(forward * 1.55 + right * (warpedUV.x + shake.x) + up * (warpedUV.y + shake.y));
+
+      vec3 rayPos = ro;
+      vec3 rayDir = rd;
+      vec3 accumColor = vec3(0.0);
+      float alpha = 0.0;
+      bool hitHorizon = false;
+
+      float tiltAngle = 0.18;[span_10](start_span)[span_10](end_span)
+      mat3 tiltMat = mat3(
+        1.0, 0.0, 0.0,
+        0.0, cos(tiltAngle), -sin(tiltAngle),
+        0.0, sin(tiltAngle), cos(tiltAngle)
+      );
+
+      float h = 0.16;
+      float currentRS = mix(RS, 0.0, u_mix_galaxy);
+
+      for (int i = 0; i < STEPS; i++) {
+        float r = length(rayPos);
+
+        if (r < currentRS * 1.02 && u_mix_galaxy < 1.0) {
+          hitHorizon = true;
+          break;
+        }
+
+        // Space bending decays as galaxy forms to prevent infinite black hole looping
+        float bendForce = mix(1.45 * RS / (r*r*r*r), 0.02 / (r*r), u_mix_galaxy);
+        float ripple = 1.0 + 0.35 * sin(r * 9.0 - u_time * 12.0) * (u_vibration + u_pulse * 1.5);
+        vec3 accel = -rayPos * bendForce * ripple * u_warp_mult;
+
+        vec3 prevPos = rayPos;
+        rayDir = normalize(rayDir + accel * h);
+        rayPos += rayDir * h;
+
+        h = max(0.05, r * 0.045);[span_11](start_span)[span_11](end_span)
+
+        vec3 p0 = tiltMat * prevPos;
+        vec3 p1 = tiltMat * rayPos;
+
+        if ((p0.y * p1.y) < 0.0) {
+          float tPlane = -p0.y / (p1.y - p0.y);
+          vec3 hitP = mix(p0, p1, tPlane);
+          float diskRadius = length(hitP.xz);
+
+          float currentRIN = mix(RIN, 0.0, u_mix_galaxy);
+          float currentROUT = mix(ROUT, 16.0, u_mix_galaxy); // Milky way extends much further
+
+          if (diskRadius >= currentRIN && diskRadius <= currentROUT) {
+            float normR = (diskRadius - currentRIN) / (currentROUT - currentRIN);
+            float phi = atan(hitP.z, hitP.x);
+
+            vec3 diskCol = vec3(0.0);
+            float diskDensity = 0.0;
+
+            // BLACK HOLE DISK
+            if (u_mix_galaxy < 1.0) {
+                float orbitSpeed = 0.55 * sqrt(RS / max(diskRadius, 0.1));
+                vec3 vDisk = vec3(-sin(phi), 0.0, cos(phi)) * orbitSpeed;
+                vec3 localDir = normalize(tiltMat * rayDir);
+                float cosTheta = dot(localDir, normalize(vDisk));
+                float beta = length(vDisk);
+                float doppler = sqrt(max(0.0, 1.0 - beta * beta)) / (1.0 - beta * cosTheta);
+
+                float swirlTime = u_time * (1.8 / sqrt(max(diskRadius, 0.1)));
+                vec2 diskCoord = vec2(diskRadius * 3.5, phi * 4.0 - swirlTime);
+                float plasmaNoise = fbm(diskCoord + vec2(fbm(diskCoord * 1.5)));
+
+                float soundWave = sin(diskRadius * 14.0 - u_time * 8.0) * (u_vibration * 0.7 + u_pulse * 1.0);
+                float intensity = smoothstep(0.0, 0.15, normR) * smoothstep(1.0, 0.6, normR);
+                intensity *= (0.6 + 0.7 * plasmaNoise + 0.3 * soundWave);
+                float temp = pow(1.0 - normR, 1.6) * (1.0 + 0.4 * soundWave);
+
+                diskCol = getDiskPalette(temp, doppler, u_vibration + u_pulse);
+                diskDensity = clamp(intensity * 1.4, 0.0, 1.0);
+            }
+
+            // MILKY WAY GALAXY
+            if (u_mix_galaxy > 0.0) {
+                float galArms = 6.0;
+                float galTwist = 3.0;
+                float galSpeed = u_time * 0.5 / sqrt(max(diskRadius, 0.1) + 0.2); 
+                float spiralAngle = phi + diskRadius * galTwist - galSpeed;
+                float spiralPattern = pow(sin(galArms * spiralAngle) * 0.5 + 0.5, 3.0);
+                
+                vec2 galCoord = vec2(diskRadius * 3.0, phi * 4.0 - u_time * 0.2);
+                float galaxyDust = fbm(galCoord) * spiralPattern;
+
+                vec3 colMilkyWay = mix(vec3(0.05, 0.1, 0.5), vec3(0.7, 0.2, 0.6), normR) * 3.0;
+                colMilkyWay += vec3(1.0, 0.9, 1.0) * galaxyDust * 5.0;
+
+                float sunGlow = smoothstep(1.5, 0.0, diskRadius);
+                vec3 sunColor = vec3(1.0, 0.9, 0.4) * 8.0 * sunGlow;
+                sunColor += vec3(1.0, 0.4, 0.1) * smoothstep(2.5, 0.0, diskRadius) * fbm(hitP.xz * 15.0 - u_time*3.0);
+
+                vec3 galFinalColor = colMilkyWay * exp(-normR * 2.5) + sunColor;
+                float galDensityTarget = clamp((galaxyDust + sunGlow) * 2.0, 0.0, 1.0);
+
+                diskCol = mix(diskCol, galFinalColor, u_mix_galaxy);
+                diskDensity = mix(diskDensity, galDensityTarget, u_mix_galaxy);
+            }
+
+            accumColor += (1.0 - alpha) * diskCol * diskDensity * 1.8;
+            alpha += (1.0 - alpha) * diskDensity;
+
+            if (alpha > 0.96) break;
+          }
+        }
+      }
+
+      float minR = length(rayPos);
+      if (!hitHorizon && minR < RS * 1.58 && minR > RS * 0.98) {
+        float ringGlow = smoothstep(RS * 1.58, RS * 1.05, minR) * (1.0 - u_mix_galaxy);
+        vec3 ringColor = getDiskPalette(0.85, 1.0, u_vibration) * 2.2;
+        accumColor += (1.0 - alpha) * ringColor * ringGlow * 0.7;
+        alpha += (1.0 - alpha) * ringGlow * 0.5;
+      }
+
+      vec3 finalColor = vec3(0.0);
+      if (hitHorizon) {
+        finalColor = accumColor; 
+      } else {
+        vec3 bgStars = backgroundStars(rayDir, u_vibration * 1.2 + u_pulse * 2.0);
+        finalColor = accumColor + (1.0 - alpha) * bgStars;
+      }
+
+      // PHASE OVERLAYS
+      finalColor *= u_dark_factor; // Absolute darkness cut
+
+      // PHASE: Single Point Light wraps in
+      float rDist = length(uv);
+      float pointGlow = smoothstep(0.4, 0.0, rDist) * u_point_light;
+      finalColor += vec3(0.9, 0.95, 1.0) * pointGlow * 5.0;
+
+      // Global Flashes
+      finalColor += vec3(1.0) * u_flash * 2.0; 
+
+      // Chromatic Aberration[span_12](start_span)[span_12](end_span)
+      float caAmount = (u_vibration * 0.015 + u_pulse * 0.04) * smoothstep(0.1, 0.8, rDist) * clamp(u_warp_mult, 0.0, 10.0) * 0.5;
+      caAmount = clamp(caAmount, 0.0, 0.8);
+      vec3 ca = vec3(
+        finalColor.r * (1.0 + caAmount),
+        finalColor.g,
+        finalColor.b * (1.0 - caAmount)
+      );
+
+      float vig = 1.0 - 0.28 * dot(uv, uv);[span_13](start_span)[span_13](end_span)
+      vec3 toneMapped = ca / (ca + vec3(1.0));[span_14](start_span)[span_14](end_span)
+      toneMapped = pow(toneMapped * vig, vec3(0.92));[span_15](start_span)[span_15](end_span)
+
+      gl_FragColor = vec4(toneMapped, 1.0);
+    }
+  `;
+
+  const vertexShader = `
+    void main() {
+      gl_Position = vec4(position, 1.0);
+    }
+  `;
+
+  const uniforms = {
+    u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    u_time: { value: 0.0 },
+    u_cam_pos: { value: new THREE.Vector3(0.0, 1.2, -6.8) },
+    u_cam_target: { value: new THREE.Vector3(0.0, 0.0, 0.0) },
+    u_vibration: { value: 0.0 },
+    u_pulse: { value: 0.0 },
+    u_palette: { value: 0 },
+    u_mix_galaxy: { value: 0.0 },
+    u_dark_factor: { value: 1.0 },
+    u_flash: { value: 0.0 },
+    u_warp_mult: { value: 1.0 },
+    u_point_light: { value: 0.0 }
+  };
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: uniforms,
+    depthWrite: false,
+    depthTest: false
+  });
+
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  scene.add(quad); 
+
+  // --- Cameras ---
+  let camRadius = 6.8;
+  let camTheta = -Math.PI * 0.5;
+  let camPhi = 0.22;
+  let isDragging = false;
+  let prevMouseX = 0;
+  let prevMouseY = 0;
+
+  const pCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+
+  function updateCameraPosition() {
+    camPhi = Math.max(-1.45, Math.min(1.45, camPhi));
+    camRadius = Math.max(3.2, Math.min(14.0, camRadius));
+    const x = camRadius * Math.cos(camPhi) * Math.sin(camTheta);
+    const y = camRadius * Math.sin(camPhi);
+    const z = camRadius * Math.cos(camPhi) * Math.cos(camTheta);
+    uniforms.u_cam_pos.value.set(x, y, z);
+    pCamera.position.set(x, y, z); 
+    pCamera.lookAt(0,0,0);
+  }
+  
+  updateCameraPosition();
+
+  window.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.hud-controls') || e.target.closest('#audio-gate')) return;
+    isDragging = true;
+    prevMouseX = e.clientX;
+    prevMouseY = e.clientY;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouseX;
+    const dy = e.clientY - prevMouseY;
+    prevMouseX = e.clientX;
+    prevMouseY = e.clientY;
+
+    camTheta += dx * 0.006;
+    camPhi -= dy * 0.006;
+    updateCameraPosition();
+  });
+
+  window.addEventListener('mouseup', () => { isDragging = false; });
+  window.addEventListener('wheel', (e) => {
+    camRadius += e.deltaY * 0.004;
+    updateCameraPosition();
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+    pCamera.aspect = window.innerWidth / window.innerHeight;
+    pCamera.updateProjectionMatrix();
+  });
+
+  // --- Sequence State Machine ---
+  let sequenceActive = false;
+  let seqStartTime = 0;
+  
+  const hudTitle = document.getElementById('hud-title-text');
+  const hudSubtitle = document.getElementById('hud-subtitle-text');
+  const hudStatus = document.getElementById('val-status');
+  const flashOverlay = document.getElementById('flash-overlay');
+
+  function startBigBangSequence() {
+      if(sequenceActive) return;
+      if (!audioCtx) initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioGate.classList.add('hidden');
+
+      sequenceActive = true;
+      seqStartTime = clock.getElapsedTime();
+      
+      hudStatus.textContent = "MATTER COLLAPSE";
+      hudStatus.classList.add('critical-val');
+
+      const now = audioCtx.currentTime;
+
+      // 0 - 2.0s: Build up
+      subGain.gain.linearRampToValueAtTime(1.0, now + 2.0);
+      subOsc.frequency.exponentialRampToValueAtTime(120, now + 2.0); 
+      filterNode.frequency.exponentialRampToValueAtTime(2000, now + 2.0);
+      
+      // 2.0s: FIRST BLINDING FLASH & Quick Distortion Tear
+      const distNode = audioCtx.createWaveShaper();
+      distNode.curve = makeDistortionCurve(1000);
+      const distOsc = audioCtx.createOscillator();
+      distOsc.type = 'sawtooth';
+      distOsc.frequency.setValueAtTime(40, now + 2.0);
+      distOsc.frequency.exponentialRampToValueAtTime(3000, now + 2.15);
+      const distGain = audioCtx.createGain();
+      distGain.gain.setValueAtTime(0, now);
+      distGain.gain.setValueAtTime(1.0, now + 2.0);
+      distGain.gain.setValueAtTime(0, now + 2.15); 
+      distOsc.connect(distNode).connect(audioCtx.destination);
+      distOsc.start(now);
+      distOsc.stop(now + 2.15);
+
+      // 2.15s - 2.8s: ABSOLUTE BLACK
+      masterGain.gain.setValueAtTime(0.0, now + 2.15);
+
+      // 2.8s - 3.8s: Light appears & Space wraps IN (Rising Suction Sound)
+      masterGain.gain.setValueAtTime(0.8, now + 2.8);
+      const suckOsc = audioCtx.createOscillator();
+      suckOsc.type = 'sine';
+      suckOsc.frequency.setValueAtTime(100, now + 2.8);
+      suckOsc.frequency.exponentialRampToValueAtTime(2000, now + 3.8); 
+      const suckGain = audioCtx.createGain();
+      suckGain.gain.setValueAtTime(0, now + 2.7);
+      suckGain.gain.linearRampToValueAtTime(1.0, now + 3.8);
+      suckGain.gain.setValueAtTime(0, now + 3.85);
+      suckOsc.connect(suckGain).connect(audioCtx.destination);
+      suckOsc.start(now + 2.8);
+      suckOsc.stop(now + 3.9);
+
+      // 3.8s: SECOND BIG BANG
+      const bangOsc = audioCtx.createOscillator();
+      bangOsc.type = 'sine';
+      bangOsc.frequency.setValueAtTime(150, now + 3.8);
+      bangOsc.frequency.exponentialRampToValueAtTime(10, now + 8.0);
+      const bangGain = audioCtx.createGain();
+      bangGain.gain.setValueAtTime(0, now + 3.7);
+      bangGain.gain.setValueAtTime(1.5, now + 3.8); 
+      bangGain.gain.exponentialRampToValueAtTime(0.01, now + 12.0);
+      bangOsc.connect(bangGain).connect(audioCtx.destination);
+      bangOsc.start(now + 3.8);
+      bangOsc.stop(now + 12.0);
+
+      const bangNoise = audioCtx.createBufferSource();
+      bangNoise.buffer = noiseNode.buffer;
+      bangNoise.loop = true;
+      const noiseFilter2 = audioCtx.createBiquadFilter();
+      noiseFilter2.type = 'lowpass';
+      noiseFilter2.frequency.setValueAtTime(6000, now + 3.8);
+      noiseFilter2.frequency.exponentialRampToValueAtTime(50, now + 10.0);
+      const bangNoiseGain = audioCtx.createGain();
+      bangNoiseGain.gain.setValueAtTime(0, now + 3.7);
+      bangNoiseGain.gain.setValueAtTime(1.2, now + 3.8);
+      bangNoiseGain.gain.exponentialRampToValueAtTime(0.01, now + 10.0);
+      bangNoise.connect(noiseFilter2).connect(bangNoiseGain).connect(audioCtx.destination);
+      bangNoise.start(now + 3.8);
+      bangNoise.stop(now + 10.0);
+
+      // 5.0s+: Milky Way Formation Audio Switch
+      setTimeout(() => {
+          droneOsc1.frequency.exponentialRampToValueAtTime(432, audioCtx.currentTime + 3.0); 
+          droneOsc2.frequency.exponentialRampToValueAtTime(648, audioCtx.currentTime + 3.0); 
+          filterNode.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 3.0);
+          
+          hudTitle.innerHTML = 'MILKY WAY <span class="badge">SOLAR SYSTEM</span>';
+          hudSubtitle.textContent = 'GALAXY FORMATION • CONSTANT SPACE BENDING';
+          hudStatus.textContent = "EXPANDING";
+          hudStatus.classList.remove('critical-val');
+          hudStatus.style.color = '#55ffaa';
+      }, 5000);
+  }
+
+  // --- UI Interactivity ---[span_16](start_span)[span_16](end_span)
+  const audioGate = document.getElementById('audio-gate');
+  const btnSound = document.getElementById('btn-sound');
+  const soundIcon = document.getElementById('sound-icon');
+  const btnPalette = document.getElementById('btn-palette');
+  const btnBigBang = document.getElementById('btn-big-bang');
+  const valWarp = document.getElementById('val-warp');
+  const valFreq = document.getElementById('val-freq');
+  const waveCanvas = document.getElementById('wave-canvas');
+  const waveCtx = waveCanvas.getContext('2d');
+
+  function startExperience() {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    audioGate.classList.add('hidden');
+    
+    warpPulseIntensity = 1.0;
+    if (audioCtx && audioCtx.state === 'running' && !isMuted) {
+      const now = audioCtx.currentTime;
+      const chirpOsc = audioCtx.createOscillator();
+      const chirpGain = audioCtx.createGain();
+      chirpOsc.type = 'sine';
+      chirpOsc.frequency.setValueAtTime(35, now);
+      chirpOsc.frequency.exponentialRampToValueAtTime(320, now + 0.6);
+      chirpGain.gain.setValueAtTime(0.6, now);
+      chirpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      chirpOsc.connect(chirpGain);
+      chirpGain.connect(masterGain);
+      chirpOsc.start(now);
+      chirpOsc.stop(now + 1.0);
+    }
+  }
+
+  audioGate.addEventListener('click', startExperience);
+  btnBigBang.addEventListener('click', startBigBangSequence);
+
+  btnSound.addEventListener('click', () => {
+    if (!audioCtx) {
+      startExperience();
+      return;
+    }
+    isMuted = !isMuted;
+    if (isMuted) {
+      masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.08);
+      btnSound.classList.remove('active');
+      soundIcon.textContent = '🔇';
+    } else {
+      masterGain.gain.setTargetAtTime(0.7, audioCtx.currentTime, 0.08);
+      btnSound.classList.add('active');
+      soundIcon.textContent = '🔊';
+    }
+  });
+
+  btnPalette.addEventListener('click', () => {
+    currentPaletteIdx = (currentPaletteIdx + 1) % PALETTES.length;
+    uniforms.u_palette.value = PALETTES[currentPaletteIdx].id;
+    warpPulseIntensity = 1.0;
+  });
+
+  function drawMiniWaveform() {
+    waveCtx.fillStyle = 'rgba(5, 8, 16, 0.7)';
+    waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+
+    if (!analyser || isMuted) {
+      waveCtx.strokeStyle = 'rgba(255, 170, 70, 0.2)';
+      waveCtx.lineWidth = 1.5;
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, waveCanvas.height / 2);
+      waveCtx.lineTo(waveCanvas.width, waveCanvas.height / 2);
+      waveCtx.stroke();
+      return;
+    }
+
+    analyser.getByteTimeDomainData(waveData);
+    waveCtx.lineWidth = 1.5;
+    waveCtx.strokeStyle = sequenceActive ? '#ff5533' : '#ff9922';
+    waveCtx.shadowColor = sequenceActive ? '#ff0000' : '#ff6600';
+    waveCtx.shadowBlur = 6;
+    waveCtx.beginPath();
+
+    const sliceWidth = waveCanvas.width * 1.0 / waveData.length;
+    let x = 0;
+    for (let i = 0; i < waveData.length; i++) {
+      const v = waveData[i] / 128.0;
+      const y = v * (waveCanvas.height / 2);
+      if (i === 0) waveCtx.moveTo(x, y);
+      else waveCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    waveCtx.stroke();
+    waveCtx.shadowBlur = 0;
+  }
+
+  const clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const elapsedTime = clock.getElapsedTime();
+    uniforms.u_time.value = elapsedTime;
+
+    let currentVibration = 0.0;
+    let currentWarpMult = 1.0;
+    
+    if (analyser && !isMuted) {
+      analyser.getByteFrequencyData(waveData);
+      let bassSum = 0;
+      for (let i = 0; i < 8; i++) bassSum += waveData[i];
+      const targetVibe = (bassSum / 8) / 255.0;
+      audioVibrationLevel += (targetVibe - audioVibrationLevel) * 0.22;
+    } else {
+      audioVibrationLevel = 0.2 + 0.15 * Math.sin(elapsedTime * 2.2);
+    }
+    currentVibration = audioVibrationLevel;
+    warpPulseIntensity *= 0.94;
+    if (warpPulseIntensity < 0.005) warpPulseIntensity = 0.0;
+
+    // --- Sequence Phase Logic ---
+    if(sequenceActive) {
+        let t = elapsedTime - seqStartTime;
+        
+        if (t < 2.0) {
+            // Phase 1: Particles pulling inside
+            currentWarpMult = 1.0 + (t / 2.0) * 15.0; 
+            currentVibration = Math.max(currentVibration, t / 1.5);
+            
+            particleMat.opacity = Math.min(1.0, t * 2.0); 
+            const positions = particleGeo.attributes.position.array;
+            for(let i=0; i<particleCount; i++) {
+                let ix = i*3, iy = i*3+1, iz = i*3+2;
+                let x = positions[ix], y = positions[iy], z = positions[iz];
+                let dist = Math.sqrt(x*x + y*y + z*z);
+                
+                if (dist > 0.2) { // Sucking force towards origin
+                    let pullForce = (2.0 + t * 12.0) / Math.max(dist, 0.5);
+                    positions[ix] -= (x/dist) * pullForce * 0.016;
+                    positions[iy] -= (y/dist) * pullForce * 0.016;
+                    positions[iz] -= (z/dist) * pullForce * 0.016;
+                }
+            }
+            particleGeo.attributes.position.needsUpdate = true;
+            
+        } else if (t < 2.15) {
+            // Phase 2: First Eyeliner Flash
+            particleMat.opacity = 0; 
+            particlesMesh.visible = false;
+            
+            uniforms.u_flash.value = 8.0;
+            flashOverlay.style.background = 'white';
+            flashOverlay.style.opacity = '1';
+            currentWarpMult = 20.0;
+            
+        } else if (t < 2.8) {
+            // Phase 3: Absolute Millisecond Blackness
+            uniforms.u_flash.value = 0.0;
+            flashOverlay.style.background = 'black'; // Forces complete pitch black via HTML overlay
+            flashOverlay.style.opacity = '1';
+            uniforms.u_dark_factor.value = 0.0; 
+            currentWarpMult = 0.0;
+            
+        } else if (t < 3.8) {
+            // Phase 4: Light appears, Space wraps INWARD
+            flashOverlay.style.opacity = '0'; // Reveal the WebGL
+            flashOverlay.style.background = 'white'; // Setup for next flash
+            uniforms.u_dark_factor.value = 0.0; // Rest of universe stays dark
+            
+            uniforms.u_point_light.value = Math.pow((t - 2.8) / 1.0, 3.0) * 8.0; 
+            currentWarpMult = ((t - 2.8) / 1.0) * 100.0; // Extreme intense wrap
+            
+        } else if (t < 4.2) {
+            // Phase 5: SECOND BIG BANG
+            uniforms.u_dark_factor.value = 1.0; 
+            uniforms.u_point_light.value = 0.0;
+            uniforms.u_flash.value = 8.0; 
+            flashOverlay.style.opacity = '1'; // Massive HTML whiteout
+            currentWarpMult = 40.0; 
+            
+        } else {
+            // Phase 6: Form Milky Way
+            let galTime = t - 4.2;
+            
+            uniforms.u_flash.value = Math.max(0.0, 8.0 - galTime * 4.0);
+            flashOverlay.style.opacity = Math.max(0.0, 1.0 - galTime).toString();
+            
+            // Constant light-year bending ripple through the Milky Way
+            currentWarpMult = 3.0 + Math.sin(elapsedTime * 2.0) * 1.5; 
+            
+            // Unveil the beautiful galaxy over 4 seconds
+            uniforms.u_mix_galaxy.value = Math.min(1.0, galTime / 4.0);
+        }
+    }
+
+    uniforms.u_vibration.value = currentVibration;
+    uniforms.u_pulse.value = warpPulseIntensity;
+    uniforms.u_warp_mult.value = currentWarpMult;
+
+    if (!isDragging) {
+      camTheta += 0.0018;
+      updateCameraPosition();
+    }
+
+    valWarp.textContent = (currentWarpMult + currentVibration * 0.65 + warpPulseIntensity * 1.5).toFixed(2) + 'x';
+    const dynFreq = (43.2 + currentVibration * 14.5 + warpPulseIntensity * 80.0 + (sequenceActive ? 300 : 0)).toFixed(1);
+    valFreq.textContent = dynFreq + ' Hz';
+
+    drawMiniWaveform();
+    
+    // Render Layering
+    renderer.autoClear = true;
+    renderer.render(scene, camera); // Render the main shader quad
+    
+    if (sequenceActive && particlesMesh.visible && particleMat.opacity > 0) {
+        renderer.autoClear = false;
+        renderer.render(scene, pCamera); // Render particles on top in perspective
+    }
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>
